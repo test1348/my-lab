@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>문장의 어순·문장부호 바꾸기</title>
+<style>
+  :root{
+    --bg:#f7f9fc;
+    --card:#ffffff;
+    --ink:#1f2a37;
+    --sub:#4b5563;
+    --line:#d7deea;
+    --blue:#3b82f6;
+    --green:#10b981;
+    --orange:#f59e0b;
+    --pink:#ec4899;
+    --purple:#8b5cf6;
+    --red:#ef4444;
+    --shadow:0 10px 24px rgba(0,0,0,.08);
+    --radius:20px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#eef5ff 0%, #f8fbff 38%, #f7f9fc 100%);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+    padding:20px;
+  }
+  h1{
+    margin:0 0 10px;
+    font-size:clamp(1.8rem, 3.6vw, 3rem);
+    line-height:1.2;
+  }
+  .lead{
+    font-size:clamp(1rem, 2vw, 1.25rem);
+    color:var(--sub);
+    margin:0 0 18px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1.2fr .95fr;
+    gap:18px;
+  }
+  @media (max-width: 900px){
+    .grid{grid-template-columns:1fr}
+  }
+  .card{
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+  }
+  .section-title{
+    font-size:clamp(1.2rem, 2.3vw, 1.7rem);
+    margin:0 0 14px;
+  }
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  label, select, button{
+    font-size:clamp(1rem, 1.8vw, 1.15rem);
+  }
+  select{
+    border:2px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    background:white;
+    color:var(--ink);
+  }
+  .token-area{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:66px;
+    padding:12px;
+    border:2px dashed var(--line);
+    border-radius:16px;
+    background:#fbfdff;
+  }
+  .token{
+    border:2px solid #cfe0ff;
+    background:#eef5ff;
+    color:#173a70;
+    border-radius:999px;
+    padding:12px 16px;
+    font-weight:700;
+    cursor:pointer;
+    user-select:none;
+    transition:.15s transform, .15s background, .15s border-color;
+    font-size:clamp(1rem, 2vw, 1.2rem);
+  }
+  .token:hover{transform:translateY(-2px)}
+  .token.selected{
+    background:#dbeafe;
+    border-color:var(--blue);
+    outline:3px solid rgba(59,130,246,.15);
+  }
+  .controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:12px 0 8px;
+  }
+  .btn{
+    border:none;
+    background:var(--blue);
+    color:white;
+    padding:12px 16px;
+    border-radius:14px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(59,130,246,.22);
+  }
+  .btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+  .btn.secondary{
+    background:#64748b;
+    box-shadow:0 6px 16px rgba(100,116,139,.18);
+  }
+  .btn.reset{
+    background:var(--red);
+    box-shadow:0 6px 16px rgba(239,68,68,.18);
+  }
+  .punct-grid{
+    display:grid;
+    grid-template-columns:repeat(5, minmax(60px, 1fr));
+    gap:10px;
+  }
+  .punct{
+    border:2px solid var(--line);
+    border-radius:16px;
+    background:white;
+    padding:14px 8px;
+    font-size:clamp(1.2rem, 2.6vw, 1.6rem);
+    font-weight:800;
+    cursor:pointer;
+  }
+  .punct.active{
+    border-color:var(--purple);
+    background:#f4f0ff;
+    color:#4c1d95;
+    outline:3px solid rgba(139,92,246,.14);
+  }
+  .sentence-box{
+    margin-top:10px;
+    padding:18px;
+    border-radius:20px;
+    background:linear-gradient(135deg,#fefefe,#f6fbff);
+    border:2px solid var(--line);
+  }
+  .sentence{
+    font-size:clamp(1.8rem, 4.4vw, 3.2rem);
+    line-height:1.4;
+    font-weight:900;
+    word-break:keep-all;
+    letter-spacing:.01em;
+  }
+  .word-focus{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:10px;
+    margin:0 2px;
+  }
+  .focus-first{background:#dbeafe}
+  .focus-last{background:#dcfce7}
+  .focus-both{background:linear-gradient(90deg,#dbeafe,#dcfce7)}
+  .note{
+    margin-top:12px;
+    font-size:clamp(1rem, 2vw, 1.15rem);
+    color:var(--sub);
+    line-height:1.6;
+  }
+  .insight{
+    margin-top:14px;
+    padding:14px 16px;
+    border-radius:16px;
+    background:#fff9eb;
+    border:2px solid #fde68a;
+    font-size:clamp(1rem, 2vw, 1.15rem);
+    line-height:1.6;
+  }
+  .legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    font-size:clamp(.95rem,1.8vw,1.05rem);
+    color:var(--sub);
+  }
+  .legend span{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .dot{
+    width:14px;height:14px;border-radius:4px;display:inline-block;
+  }
+  .small{
+    font-size:clamp(.92rem,1.7vw,1rem);
+    color:var(--sub);
+  }
+  svg{
+    width:100%;
+    height:auto;
+    display:block;
+    border:2px solid var(--line);
+    border-radius:16px;
+    background:#fcfdff;
+  }
+  .footer-tip{
+    margin-top:12px;
+    color:var(--sub);
+    font-size:clamp(.98rem,1.8vw,1.05rem);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>문장의 어순·문장부호를 바꾸면 느낌이 어떻게 달라질까?</h1>
+  <p class="lead">어절의 순서를 바꾸고, 문장부호를 골라 보세요. 같은 낱말도 <strong>앞에 놓인 말</strong>, <strong>끝에 놓인 말</strong>, <strong>마침표·느낌표·물음표</strong>에 따라 강조점과 어감이 달라집니다.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2 class="section-title">1. 문장을 직접 바꿔 보기</h2>
+
+      <div class="row">
+        <label for="preset"><strong>문장 고르기:</strong></label>
+        <select id="preset" aria-label="문장 고르기">
+          <option value="0">오늘 / 나는 / 숙제를 / 다 / 했다</option>
+          <option value="1">정말 / 네가 / 이겼다</option>
+          <option value="2">이제 / 우리가 / 시작한다</option>
+        </select>
+      </div>
+
+      <div class="small">어절을 눌러 선택한 뒤, 왼쪽·오른쪽으로 옮겨 보세요.</div>
+      <div id="tokenArea" class="token-area" aria-label="어절 순서 바꾸기"></div>
+
+      <div class="controls">
+        <button id="leftBtn" class="btn" type="button">← 왼쪽으로</button>
+        <button id="rightBtn" class="btn" type="button">오른쪽으로 →</button>
+        <button id="shuffleBtn" class="btn secondary" type="button">순서 섞기</button>
+        <button id="resetBtn" class="btn reset" type="button">다시 시작</button>
+      </div>
+
+      <h2 class="section-title" style="margin-top:18px;">2. 문장부호 고르기</h2>
+      <div class="punct-grid" id="punctGrid" aria-label="문장부호 선택">
+        <button class="punct active" data-punc=".">.</button>
+        <button class="punct" data-punc="!">!</button>
+        <button class="punct" data-punc="?">?</button>
+        <button class="punct" data-punc="…">…</button>
+        <button class="punct" data-punc="~">~</button>
+      </div>
+
+      <div class="sentence-box">
+        <div class="small"><strong>지금 만든 문장</strong></div>
+        <div id="sentence" class="sentence" aria-live="polite"></div>
+        <div id="note" class="note"></div>
+        <div id="insight" class="insight"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">3. 느낌 그래프로 확인하기</h2>
+      <svg id="chart" viewBox="0 0 760 540" role="img" aria-label="어절 강조와 문장부호 느낌 그래프"></svg>
+      <div class="legend">
+        <span><i class="dot" style="background:#60a5fa;"></i>어절별 강조 점수</span>
+        <span><i class="dot" style="background:#f59e0b;"></i>평온함</span>
+        <span><i class="dot" style="background:#ef4444;"></i>놀람</span>
+        <span><i class="dot" style="background:#8b5cf6;"></i>물음</span>
+        <span><i class="dot" style="background:#10b981;"></i>여운·부드러움</span>
+      </div>
+      <div class="footer-tip">
+        세로축은 <strong>상대 점수(0~10점)</strong>입니다. 점수가 높을수록 그 느낌이 더 강하게 드러납니다.
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  const presets = [
+    ["오늘","나는","숙제를","다","했다"],
+    ["정말","네가","이겼다"],
+    ["이제","우리가","시작한다"]
+  ];
+
+  const defaultPunc = ".";
+  let currentPreset = 0;
+  let words = presets[currentPreset].slice();
+  let selectedIndex = 0;
+  let punctuation = defaultPunc;
+
+  const presetEl = document.getElementById("preset");
+  const tokenArea = document.getElementById("tokenArea");
+  const sentenceEl = document.getElementById("sentence");
+  const noteEl = document.getElementById("note");
+  const insightEl = document.getElementById("insight");
+  const chartEl = document.getElementById("chart");
+  const leftBtn = document.getElementById("leftBtn");
+  const rightBtn = document.getElementById("rightBtn");
+  const shuffleBtn = document.getElementById("shuffleBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const punctButtons = Array.from(document.querySelectorAll(".punct"));
+
+  function resetState(){
+    words = presets[currentPreset].slice();
+    selectedIndex = 0;
+    punctuation = defaultPunc;
+    punctButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.punc === punctuation));
+    render();
+  }
+
+  function shuffleArray(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function moveSelected(dir){
+    const ni = selectedIndex + dir;
+    if(ni < 0 || ni >= words.length) return;
+    [words[selectedIndex], words[ni]] = [words[ni], words[selectedIndex]];
+    selectedIndex = ni;
+    render();
+  }
+
+  function getWordScores(){
+    const n = words.length;
+    return words.map((w, i) => {
+      let score;
+      if(n === 1) score = 10;
+      else if(i === 0) score = 9;
+      else if(i === n - 1) score = 8;
+      else {
+        const midBase = [6,5,4,3,2];
+        score = midBase[Math.min(i-1, midBase.length-1)] || 3;
+      }
+      if(i === n - 1){
+        if(punctuation === "!") score += 1.5;
+        if(punctuation === "?") score += 1.2;
+        if(punctuation === "…") score += 0.8;
+        if(punctuation === "~") score += 0.5;
+      }
+      return Math.min(10, Math.round(score * 10) / 10);
+    });
+  }
+
+  function getToneScores(){
+    const map = {
+      ".": { calm:8.5, surprise:1.5, question:0.5, soft:2.5 },
+      "!": { calm:2.0, surprise:9.5, question:1.0, soft:2.0 },
+      "?": { calm:3.0, surprise:2.5, question:9.5, soft:3.0 },
+      "…": { calm:4.0, surprise:1.5, question:2.0, soft:8.5 },
+      "~": { calm:5.0, surprise:2.0, question:1.5, soft:9.0 }
+    };
+    return map[punctuation];
+  }
+
+  function makeSentenceHTML(){
+    return words.map((w,i) => {
+      const first = i === 0;
+      const last = i === words.length - 1;
+      let cls = "";
+      if(first && last) cls = "focus-both";
+      else if(first) cls = "focus-first";
+      else if(last) cls = "focus-last";
+      if(cls) return '<span class="word-focus '+cls+'">'+escapeHtml(w)+'</span>';
+      return '<span>'+escapeHtml(w)+'</span>';
+    }).join(" ") + punctuation;
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function getFeedback(){
+    const first = words[0];
+    const last = words[words.length-1];
+    const puncText = {
+      ".":"차분하고 단정하게 끝나요.",
+      "!":"강한 놀람이나 힘주어 말하는 느낌이 나요.",
+      "?":"묻는 느낌, 확인하는 느낌이 강해져요.",
+      "…":"말끝을 흐리거나 여운을 남기는 느낌이 나요.",
+      "~":"부드럽고 가볍게 이어지는 느낌이 나요."
+    }[punctuation];
+
+    const base = "앞에 놓인 <strong>" + first + "</strong>은(는) 먼저 눈에 들어와 화제나 강조점처럼 느껴지고, 끝에 놓인 <strong>" + last + "</strong>은(는) 문장의 마무리로 남아 여운을 줍니다.";
+    let add = "";
+
+    if(words.length >= 3){
+      add = " 같은 낱말이라도 <strong>순서가 바뀌면 무엇을 먼저 드러낼지</strong> 달라져요.";
+    } else {
+      add = " 짧은 문장일수록 자리 변화가 더 크게 느껴질 수 있어요.";
+    }
+
+    return {
+      note: base + " " + puncText,
+      insight: "확인할 개념: <strong>같은 낱말도 순서와 문장부호에 따라 강조점과 어감이 달라진다.</strong>" + add
+    };
+  }
+
+  function renderTokens(){
+    tokenArea.innerHTML = "";
+    words.forEach((w, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "token" + (i === selectedIndex ? " selected" : "");
+      btn.textContent = w;
+      btn.setAttribute("aria-pressed", i === selectedIndex ? "true" : "false");
+      btn.addEventListener("click", () => {
+        selectedIndex = i;
+        render();
+      });
+      tokenArea.appendChild(btn);
+    });
+    leftBtn.disabled = selectedIndex <= 0;
+    rightBtn.disabled = selectedIndex >= words.length - 1;
+  }
+
+  function renderChart(){
+    const wordScores = getWordScores();
+    const tone = getToneScores();
+    const W = 760, H = 540;
+    const topH = 300;
+    const left = 62, right = 18;
+    const wordBottom = 262;
+    const toneTop = 340;
+    const toneBottom = 500;
+    const plotW = W - left - right;
+
+    let svg = "";
+    svg += '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fcfdff"/>';
+    svg += '<text x="20" y="32" font-size="24" font-weight="800" fill="#1f2a37">어절별 강조 점수</text>';
+    svg += '<text x="20" y="328" font-size="24" font-weight="800" fill="#1f2a37">문장부호가 주는 느낌</text>';
+
+    for(let t=0;t<=10;t+=2){
+      const y1 = wordBottom - (t/10)*(wordBottom-60);
+      svg += '<line x1="'+left+'" y1="'+y1+'" x2="'+(W-right)+'" y2="'+y1+'" stroke="#e5edf7" stroke-width="1"/>';
+      svg += '<text x="'+(left-12)+'" y="'+(y1+5)+'" text-anchor="end" font-size="16" fill="#6b7280">'+t+'</text>';
+      const y2 = toneBottom - (t/10)*(toneBottom-toneTop);
+      svg += '<line x1="'+left+'" y1="'+y2+'" x2="'+(W-right)+'" y2="'+y2+'" stroke="#e5edf7" stroke-width="1"/>';
+      svg += '<text x="'+(left-12)+'" y="'+(y2+5)+'" text-anchor="end" font-size="16" fill="#6b7280">'+t+'</text>';
+    }
+
+    svg += '<line x1="'+left+'" y1="60" x2="'+left+'" y2="'+wordBottom+'" stroke="#64748b" stroke-width="2"/>';
+    svg += '<line x1="'+left+'" y1="'+wordBottom+'" x2="'+(W-right)+'" y2="'+wordBottom+'" stroke="#64748b" stroke-width="2"/>';
+    svg += '<line x1="'+left+'" y1="'+toneTop+'" x2="'+left+'" y2="'+toneBottom+'" stroke="#64748b" stroke-width="2"/>';
+    svg += '<line x1="'+left+'" y1="'+toneBottom+'" x2="'+(W-right)+'" y2="'+toneBottom+'" stroke="#64748b" stroke-width="2"/>';
+
+    svg += '<text x="18" y="52" font-size="16" fill="#475569">점</text>';
+    svg += '<text x="18" y="334" font-size="16" fill="#475569">점</text>';
+
+    const n = words.length;
+    const step = plotW / Math.max(n, 1);
+    const barW = Math.min(90, step * 0.55);
+
+    wordScores.forEach((score, i) => {
+      const x = left + step*i + (step-barW)/2;
+      const h = (score/10)*(wordBottom-60);
+      const y = wordBottom - h;
+      const fill = i===0 && i===n-1 ? "#34d399" : (i===0 ? "#60a5fa" : (i===n-1 ? "#22c55e" : "#93c5fd"));
+      svg += '<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+h+'" rx="10" fill="'+fill+'"/>';
+      svg += '<text x="'+(x+barW/2)+'" y="'+(y-8)+'" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2a37">'+score+'</text>';
+      svg += '<text x="'+(x+barW/2)+'" y="'+(wordBottom+26)+'" text-anchor="middle" font-size="18" font-weight="700" fill="#1f2a37">'+escapeXml(words[i])+'</text>';
+    });
+
+    const toneLabels = ["평온함","놀람","물음","여운"];
+    const toneValues = [tone.calm, tone.surprise, tone.question, tone.soft];
+    const toneColors = ["#f59e0b","#ef4444","#8b5cf6","#10b981"];
+    const tn = toneLabels.length;
+    const tStep = plotW / tn;
+    const tBarW = Math.min(110, tStep * 0.55);
+
+    toneLabels.forEach((label, i) => {
+      const x = left + tStep*i + (tStep-tBarW)/2;
+      const h = (toneValues[i]/10)*(toneBottom-toneTop);
+      const y = toneBottom - h;
+      svg += '<rect x="'+x+'" y="'+y+'" width="'+tBarW+'" height="'+h+'" rx="10" fill="'+toneColors[i]+'"/>';
+      svg += '<text x="'+(x+tBarW/2)+'" y="'+(y-8)+'" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2a37">'+toneValues[i]+'</text>';
+      svg += '<text x="'+(x+tBarW/2)+'" y="'+(toneBottom+26)+'" text-anchor="middle" font-size="18" font-weight="700" fill="#1f2a37">'+label+'</text>';
+    });
+
+    svg += '<text x="'+(W-20)+'" y="'+(wordBottom+50)+'" text-anchor="end" font-size="16" fill="#475569">가로축: 어절</text>';
+    svg += '<text x="'+(W-20)+'" y="'+(toneBottom+50)+'" text-anchor="end" font-size="16" fill="#475569">가로축: 느낌 종류</text>';
+
+    chartEl.innerHTML = svg;
+  }
+
+  function escapeXml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"
+    }[c]));
+  }
+
+  function render(){
+    renderTokens();
+    sentenceEl.innerHTML = makeSentenceHTML();
+    const fb = getFeedback();
+    noteEl.innerHTML = fb.note;
+    insightEl.innerHTML = fb.insight;
+    renderChart();
+  }
+
+  presetEl.addEventListener("change", () => {
+    currentPreset = Number(presetEl.value);
+    resetState();
+  });
+
+  leftBtn.addEventListener("click", () => moveSelected(-1));
+  rightBtn.addEventListener("click", () => moveSelected(1));
+
+  shuffleBtn.addEventListener("click", () => {
+    const selectedWord = words[selectedIndex];
+    words = shuffleArray(words);
+    selectedIndex = Math.max(0, words.indexOf(selectedWord));
+    render();
+  });
+
+  resetBtn.addEventListener("click", resetState);
+
+  punctButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      punctuation = btn.dataset.punc;
+      punctButtons.forEach(b => b.classList.toggle("active", b === btn));
+      render();
+    });
+  });
+
+  resetState();
+})();
+</script>
+</body>
+</html>

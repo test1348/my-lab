@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>보색 대비 탐구</title>
+<style>
+  :root{
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --text:#18202a;
+    --muted:#5c6773;
+    --line:#d9e0ea;
+    --accent:#2c7be5;
+    --shadow:0 10px 30px rgba(0,0,0,0.08);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    background:linear-gradient(180deg,#eef4ff 0%, #f8fbff 100%);
+    color:var(--text);
+  }
+  .app{
+    max-width:1200px;
+    margin:0 auto;
+    padding:20px;
+  }
+  h1{
+    margin:0 0 10px;
+    font-size:clamp(1.8rem, 3vw, 2.8rem);
+    line-height:1.2;
+  }
+  .lead{
+    font-size:clamp(1rem, 1.8vw, 1.25rem);
+    color:var(--muted);
+    margin-bottom:18px;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap:20px;
+  }
+  .panel, .stage{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .panel{
+    padding:18px;
+  }
+  .stage{
+    padding:16px;
+  }
+  .section-title{
+    font-size:clamp(1.1rem, 2vw, 1.35rem);
+    margin:0 0 12px;
+  }
+  .control{
+    margin:14px 0 18px;
+  }
+  .control label{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    font-size:clamp(1rem, 1.7vw, 1.15rem);
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .value{
+    color:var(--accent);
+    font-weight:800;
+    min-width:90px;
+    text-align:right;
+  }
+  input[type="range"]{
+    width:100%;
+    height:14px;
+    appearance:none;
+    border-radius:999px;
+    background:#dde7f5;
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    appearance:none;
+    width:26px;height:26px;border-radius:50%;
+    background:#fff;border:3px solid var(--accent);
+    box-shadow:0 3px 10px rgba(0,0,0,0.18);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:26px;height:26px;border-radius:50%;
+    background:#fff;border:3px solid var(--accent);
+    box-shadow:0 3px 10px rgba(0,0,0,0.18);
+    cursor:pointer;
+  }
+  .radios{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+  }
+  .radio{
+    position:relative;
+  }
+  .radio input{
+    position:absolute;
+    opacity:0;
+    inset:0;
+  }
+  .radio label{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:56px;
+    border:2px solid var(--line);
+    border-radius:14px;
+    font-size:clamp(0.95rem, 1.5vw, 1.05rem);
+    font-weight:800;
+    cursor:pointer;
+    user-select:none;
+  }
+  .radio input:checked + label{
+    border-color:var(--accent);
+    box-shadow:inset 0 0 0 2px rgba(44,123,229,.15);
+  }
+  .bg-white label{background:#fff;color:#111}
+  .bg-gray label{background:#888;color:#fff}
+  .bg-black label{background:#111;color:#fff}
+  .btn-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  button{
+    border:none;
+    border-radius:14px;
+    padding:14px 18px;
+    font-size:clamp(1rem, 1.7vw, 1.1rem);
+    font-weight:800;
+    cursor:pointer;
+  }
+  .reset{
+    background:#e9eef7;
+    color:#1e2a37;
+  }
+  .example{
+    background:var(--accent);
+    color:#fff;
+  }
+  .tip{
+    margin-top:12px;
+    padding:12px 14px;
+    background:#f7faff;
+    border:1px solid #dfeaf9;
+    border-radius:14px;
+    color:#38506b;
+    font-size:clamp(0.95rem, 1.5vw, 1.05rem);
+    line-height:1.5;
+  }
+
+  .stage-top{
+    display:grid;
+    grid-template-columns: 1fr 300px;
+    gap:16px;
+    align-items:start;
+  }
+  .play-area{
+    border-radius:18px;
+    padding:18px;
+    min-height:500px;
+    border:1px solid var(--line);
+    transition:background .15s ease;
+  }
+  .compare-title{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  .compare-title h2{
+    margin:0;
+    font-size:clamp(1.2rem, 2.2vw, 1.6rem);
+  }
+  .compare-title .sub{
+    color:var(--muted);
+    font-size:clamp(0.95rem, 1.5vw, 1.05rem);
+  }
+  .pairs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-top:8px;
+  }
+  .box-card{
+    background:rgba(255,255,255,0.65);
+    backdrop-filter: blur(2px);
+    border:1px solid rgba(0,0,0,0.08);
+    border-radius:16px;
+    padding:14px;
+  }
+  .box-label{
+    font-size:clamp(1rem, 1.7vw, 1.1rem);
+    font-weight:800;
+    margin-bottom:10px;
+  }
+  .pair-view{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    min-height:220px;
+    border-radius:14px;
+    overflow:hidden;
+    border:2px solid rgba(0,0,0,0.12);
+  }
+  .solo-view{
+    display:grid;
+    grid-template-columns:1fr;
+    min-height:220px;
+    border-radius:14px;
+    overflow:hidden;
+    border:2px solid rgba(0,0,0,0.12);
+  }
+  .color-block{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding:10px;
+  }
+  .chip{
+    background:rgba(255,255,255,0.82);
+    color:#111;
+    border-radius:999px;
+    padding:8px 12px;
+    font-size:clamp(0.9rem, 1.4vw, 1rem);
+    font-weight:800;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+  }
+  .observation{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .note{
+    border-radius:16px;
+    padding:14px;
+    border:1px solid var(--line);
+    background:#fcfdff;
+  }
+  .note h3{
+    margin:0 0 8px;
+    font-size:clamp(1rem, 1.8vw, 1.15rem);
+  }
+  .note p{
+    margin:0;
+    color:#334155;
+    line-height:1.6;
+    font-size:clamp(0.95rem, 1.5vw, 1.05rem);
+  }
+  .ring-card{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    background:#fbfdff;
+  }
+  .ring-title{
+    font-size:clamp(1rem, 1.7vw, 1.1rem);
+    font-weight:800;
+    margin-bottom:10px;
+  }
+  .legend{
+    margin-top:8px;
+    display:grid;
+    gap:8px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:clamp(0.95rem, 1.45vw, 1rem);
+  }
+  .sw{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid rgba(0,0,0,0.18);
+    flex:0 0 auto;
+  }
+  .data-box{
+    margin-top:12px;
+    padding:12px;
+    background:#f4f8ff;
+    border:1px solid #dce8fa;
+    border-radius:14px;
+    font-size:clamp(0.95rem, 1.5vw, 1.03rem);
+    line-height:1.6;
+  }
+  .footer-note{
+    margin-top:16px;
+    padding:14px;
+    background:#fff8e8;
+    border:1px solid #f4df9e;
+    border-radius:16px;
+    font-size:clamp(1rem, 1.55vw, 1.08rem);
+    line-height:1.6;
+  }
+  .key{
+    font-weight:900;
+    color:#8a5a00;
+  }
+  canvas{
+    width:100%;
+    height:auto;
+    display:block;
+    border-radius:14px;
+    background:#fff;
+    border:1px solid var(--line);
+  }
+  @media (max-width: 980px){
+    .layout{grid-template-columns:1fr}
+    .stage-top{grid-template-columns:1fr}
+  }
+  @media (max-width: 700px){
+    .pairs, .observation{grid-template-columns:1fr}
+    .radios{grid-template-columns:1fr}
+    .play-area{min-height:auto}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>보색 대비 탐구</h1>
+    <div class="lead">색을 직접 바꾸어 보며, <strong>마주 보는 색(보색)</strong>을 이웃에 두면 어떻게 더 뚜렷해 보이는지 관찰해 보세요.</div>
+
+    <div class="layout">
+      <aside class="panel">
+        <h2 class="section-title">조작하기</h2>
+
+        <div class="control">
+          <label for="hue">
+            <span>색상</span>
+            <span class="value" id="hueValue">0°</span>
+          </label>
+          <input id="hue" type="range" min="0" max="359" value="20" />
+        </div>
+
+        <div class="control">
+          <label for="light">
+            <span>명도</span>
+            <span class="value" id="lightValue">50%</span>
+          </label>
+          <input id="light" type="range" min="20" max="80" value="50" />
+        </div>
+
+        <div class="control">
+          <label>
+            <span>배경색 선택</span>
+            <span class="value" id="bgValue">밝은 배경</span>
+          </label>
+          <div class="radios">
+            <div class="radio bg-white">
+              <input type="radio" name="bg" id="bgWhite" value="white" checked>
+              <label for="bgWhite">밝은 배경</label>
+            </div>
+            <div class="radio bg-gray">
+              <input type="radio" name="bg" id="bgGray" value="gray">
+              <label for="bgGray">회색 배경</label>
+            </div>
+            <div class="radio bg-black">
+              <input type="radio" name="bg" id="bgBlack" value="black">
+              <label for="bgBlack">어두운 배경</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="reset" id="resetBtn">다시 시작</button>
+          <button class="example" id="exampleBtn">예시 보기</button>
+        </div>
+
+        <div class="tip">
+          <strong>해 보기</strong><br>
+          1. 색상을 움직여 색을 고르세요.<br>
+          2. 옆 칸의 <strong>보색</strong>이 자동으로 나타납니다.<br>
+          3. 같은 색이 <strong>혼자 있을 때</strong>와 <strong>보색 옆에 있을 때</strong>를 비교해 보세요.<br>
+          4. 배경색도 바꾸어 어떤 차이가 생기는지 살펴보세요.
+        </div>
+      </aside>
+
+      <main class="stage">
+        <div class="stage-top">
+          <section class="play-area" id="playArea">
+            <div class="compare-title">
+              <h2>색 비교 화면</h2>
+              <div class="sub">왼쪽은 보색과 나란히, 오른쪽은 혼자</div>
+            </div>
+
+            <div class="pairs">
+              <div class="box-card">
+                <div class="box-label">① 보색을 이웃에 둔 모습</div>
+                <div class="pair-view">
+                  <div class="color-block" id="leftMainBlock">
+                    <div class="chip" id="leftMainLabel">선택한 색</div>
+                  </div>
+                  <div class="color-block" id="compBlock">
+                    <div class="chip" id="compLabel">보색</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="box-card">
+                <div class="box-label">② 같은 색이 혼자 있는 모습</div>
+                <div class="solo-view">
+                  <div class="color-block" id="soloBlock">
+                    <div class="chip" id="soloLabel">선택한 색</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="observation">
+              <div class="note">
+                <h3>관찰 질문</h3>
+                <p>
+                  같은 색인데, 보색 옆에 있을 때 더 <strong>선명하게</strong>, 더 <strong>튀어 보이거나 경계가 또렷하게</strong> 느껴지나요?
+                </p>
+              </div>
+              <div class="note">
+                <h3>확인할 개념</h3>
+                <p>
+                  <strong>보색 대비</strong>: 색상환에서 마주 보는 두 색을 나란히 두면 서로를 더 강하게 보이게 하는 효과가 있습니다.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <aside class="ring-card">
+            <div class="ring-title">색상환 그래프</div>
+            <canvas id="wheel" width="300" height="300" aria-label="색상환 그래프"></canvas>
+
+            <div class="legend">
+              <div class="legend-item"><span class="sw" id="swMain"></span><span id="legendMain">선택한 색: 20°</span></div>
+              <div class="legend-item"><span class="sw" id="swComp"></span><span id="legendComp">보색: 200°</span></div>
+            </div>
+
+            <div class="data-box">
+              <strong>값 읽기</strong><br>
+              색상각: <span id="dataHue">20°</span><br>
+              보색각: <span id="dataComp">200°</span><br>
+              명도: <span id="dataLight">50%</span><br>
+              기준: 색상환에서 <strong>180° 반대쪽</strong>이 보색
+            </div>
+          </aside>
+        </div>
+
+        <div class="footer-note">
+          <span class="key">생각해 보기</span>:
+          보색끼리 만나면 왜 더 눈에 잘 들어올까요?
+          두 색의 차이가 커서 서로를 더 강하게 느끼게 하기 때문입니다.
+          배경색까지 달라지면 밝고 어두운 느낌도 함께 달라져 보일 수 있습니다.
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const hue = document.getElementById('hue');
+  const light = document.getElementById('light');
+  const hueValue = document.getElementById('hueValue');
+  const lightValue = document.getElementById('lightValue');
+  const bgValue = document.getElementById('bgValue');
+
+  const playArea = document.getElementById('playArea');
+  const leftMainBlock = document.getElementById('leftMainBlock');
+  const compBlock = document.getElementById('compBlock');
+  const soloBlock = document.getElementById('soloBlock');
+
+  const leftMainLabel = document.getElementById('leftMainLabel');
+  const compLabel = document.getElementById('compLabel');
+  const soloLabel = document.getElementById('soloLabel');
+
+  const swMain = document.getElementById('swMain');
+  const swComp = document.getElementById('swComp');
+  const legendMain = document.getElementById('legendMain');
+  const legendComp = document.getElementById('legendComp');
+  const dataHue = document.getElementById('dataHue');
+  const dataComp = document.getElementById('dataComp');
+  const dataLight = document.getElementById('dataLight');
+
+  const resetBtn = document.getElementById('resetBtn');
+  const exampleBtn = document.getElementById('exampleBtn');
+
+  const wheel = document.getElementById('wheel');
+  const ctx = wheel.getContext('2d');
+
+  const bgRadios = Array.from(document.querySelectorAll('input[name="bg"]'));
+
+  function hslStr(h, s, l){
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  }
+
+  function compHue(h){
+    return (Number(h) + 180) % 360;
+  }
+
+  function selectedBg(){
+    const checked = bgRadios.find(r => r.checked)?.value || 'white';
+    return checked;
+  }
+
+  function bgColorMode(mode){
+    if(mode === 'white') return {bg:'#f8f8f6', text:'밝은 배경'};
+    if(mode === 'gray') return {bg:'#8a8a8a', text:'회색 배경'};
+    return {bg:'#171717', text:'어두운 배경'};
+  }
+
+  function textColorForBg(mode){
+    return mode === 'black' ? '#ffffff' : '#111111';
+  }
+
+  function labelTextColor(l){
+    return l < 45 ? '#ffffff' : '#111111';
+  }
+
+  function drawWheel(mainH, compH, l){
+    const w = wheel.width;
+    const h = wheel.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const rOuter = 115;
+    const rInner = 62;
+
+    ctx.clearRect(0,0,w,h);
+
+    for(let a=0; a<360; a++){
+      const start = (a - 1) * Math.PI / 180;
+      const end = a * Math.PI / 180;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(start) * rInner, cy + Math.sin(start) * rInner);
+      ctx.arc(cx, cy, rInner, start, end);
+      ctx.lineTo(cx + Math.cos(end) * rOuter, cy + Math.sin(end) * rOuter);
+      ctx.arc(cx, cy, rOuter, end, start, true);
+      ctx.closePath();
+      ctx.fillStyle = hslStr(a, 80, 50);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, rInner - 10, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.strokeStyle = "#d9e0ea";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 십자 보조선
+    ctx.strokeStyle = "#d0d7e2";
+    ctx.lineWidth = 1;
+    [[0,180],[90,270]].forEach(pair=>{
+      const a1 = pair[0] * Math.PI / 180;
+      const a2 = pair[1] * Math.PI / 180;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a1) * (rInner - 8), cy + Math.sin(a1) * (rInner - 8));
+      ctx.lineTo(cx + Math.cos(a1) * (rOuter + 6), cy + Math.sin(a1) * (rOuter + 6));
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a2) * (rInner - 8), cy + Math.sin(a2) * (rInner - 8));
+      ctx.lineTo(cx + Math.cos(a2) * (rOuter + 6), cy + Math.sin(a2) * (rOuter + 6));
+      ctx.stroke();
+    });
+
+    function mark(angle, color, label){
+      const rad = (angle - 90) * Math.PI / 180;
+      const x = cx + Math.cos(rad) * ((rInner + rOuter)/2);
+      const y = cy + Math.sin(rad) * ((rInner + rOuter)/2);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#111";
+      ctx.stroke();
+
+      const tx = cx + Math.cos(rad) * (rOuter + 28);
+      const ty = cy + Math.sin(rad) * (rOuter + 28);
+
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#1f2937";
+      ctx.fillText(label, tx, ty);
+    }
+
+    mark(mainH, hslStr(mainH, 80, l), "선택");
+    mark(compH, hslStr(compH, 80, l), "보색");
+
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("보색 = 180° 반대", cx, cy - 8);
+
+    ctx.font = "14px sans-serif";
+    ctx.fillStyle = "#64748b";
+    ctx.fillText("축 단위: 도(°)", cx, cy + 18);
+  }
+
+  function update(){
+    const h = Number(hue.value);
+    const l = Number(light.value);
+    const c = compHue(h);
+    const bgMode = selectedBg();
+    const bg = bgColorMode(bgMode);
+
+    const mainColor = hslStr(h, 80, l);
+    const complementColor = hslStr(c, 80, l);
+
+    hueValue.textContent = `${h}°`;
+    lightValue.textContent = `${l}%`;
+    bgValue.textContent = bg.text;
+
+    playArea.style.background = bg.bg;
+    playArea.style.color = textColorForBg(bgMode);
+
+    leftMainBlock.style.background = mainColor;
+    compBlock.style.background = complementColor;
+    soloBlock.style.background = mainColor;
+
+    const labelColor = labelTextColor(l);
+    leftMainLabel.textContent = `선택한 색 ${h}°`;
+    compLabel.textContent = `보색 ${c}°`;
+    soloLabel.textContent = `선택한 색 ${h}°`;
+
+    [leftMainLabel, compLabel, soloLabel].forEach(el=>{
+      el.style.color = labelColor;
+      el.style.background = l < 45 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.75)';
+      el.style.border = l < 45 ? '1px solid rgba(255,255,255,0.35)' : '1px solid rgba(0,0,0,0.08)';
+    });
+
+    swMain.style.background = mainColor;
+    swComp.style.background = complementColor;
+    legendMain.textContent = `선택한 색: ${h}°`;
+    legendComp.textContent = `보색: ${c}°`;
+    dataHue.textContent = `${h}°`;
+    dataComp.textContent = `${c}°`;
+    dataLight.textContent = `${l}%`;
+
+    // 대비가 더 보이도록 혼자 있는 색에는 넓은 여백
+    soloBlock.style.boxShadow = `inset 0 0 0 18px ${bg.bg}`;
+    leftMainBlock.style.boxShadow = `inset -1px 0 0 rgba(0,0,0,0.15)`;
+    compBlock.style.boxShadow = `inset 1px 0 0 rgba(0,0,0,0.15)`;
+
+    drawWheel(h, c, l);
+  }
+
+  hue.addEventListener('input', update);
+  light.addEventListener('input', update);
+  bgRadios.forEach(r => r.addEventListener('change', update));
+
+  resetBtn.addEventListener('click', ()=>{
+    hue.value = 20;
+    light.value = 50;
+    document.getElementById('bgWhite').checked = true;
+    update();
+  });
+
+  exampleBtn.addEventListener('click', ()=>{
+    hue.value = 0;
+    light.value = 50;
+    document.getElementById('bgGray').checked = true;
+    update();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
